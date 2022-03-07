@@ -1,10 +1,15 @@
 import time
 
 import requests
-from lxml import etree
 import urllib3
+from lxml import etree
+
+from utils import MongoCore
+
 urllib3.disable_warnings()
 import config
+
+M_ = MongoCore()
 
 headers = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
@@ -32,29 +37,29 @@ def parse_text(html):
     return text_
 
 
-def parse_image(html, title):
+def parse_image(html, aid):
     doc = etree_(html)
     img_s = doc.xpath("//div[@id='page-content']//img/@data-src")
-    for index,img_url in enumerate(img_s):
-        save_image(img_url, f"{title}_{index+1}")
+    for index, img_url in enumerate(img_s):
+        save_image(img_url, f"{aid}_{index + 1}")
 
 
-def save_image(url, name):
+def save_image(url, aid):
     response = requests.get(url, headers=headers, verify=False)
-    with open(f"./三毛游/IMAGE/{name}.jpg", "wb") as f:
+    with open(f"./纯粹英雄/IMAGE/{aid}.jpg", "wb") as f:
         f.write(response.content)
 
 
-def save_html(html,title):
-    with open(f"./三毛游/HTML/{title}.html", "w", encoding="utf-8") as f:
+def save_html(html, aid):
+    with open(f"./纯粹英雄/HTML/{aid}.html", "w", encoding="utf-8") as f:
         html_ = html.replace("mmbiz.qpic.cn", "wximg.cccyun.cc")
         f.write(html_)
 
 
 if __name__ == '__main__':
-    for obj_ in config.app_msg_list:
+    for obj_ in M_.collection.find({}):
+        print("正在抓取: ",obj_.get("title"), obj_.get("aid"))
         html_ = get_html(url=obj_.get("link"))
-        # parse_text(html_)
-        parse_image(html=html_,title=obj_.get("title"))
-        save_html(html=html_,title=obj_.get("title"))
+        parse_image(html=html_, aid=obj_.get("aid"))
+        save_html(html=html_, aid=obj_.get("aid"))
         time.sleep(8)
